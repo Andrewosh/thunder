@@ -140,7 +140,7 @@ class Data(object):
         if len(filteredVals) == 1:
             return filteredVals[0]
         elif not filteredVals:
-            return None
+            raise KeyError("Key not found: %s" % str(key))
         else:
             return filteredVals
 
@@ -167,6 +167,8 @@ class Data(object):
                 if len(vals) == 1:
                     vals = vals[0]
             retVals.append(vals)
+        if not retVals:
+            raise KeyError("Keys not found: %s" % str(keys))
         return retVals
 
     def getRange(self, sliceOrSlices):
@@ -178,7 +180,7 @@ class Data(object):
 
         For singleton keys, a single slice (or slice sequence of length one) should be passed.
         For tuple keys, a sequence of multiple slices should be passed. A `step` attribute on slices
-        is not supported and a alueError will be raised if passed.
+        is not supported and a ValueError will be raised if passed.
 
         Parameters
         ----------
@@ -230,6 +232,8 @@ class Data(object):
 
         filteredRecs = self.rdd.filter(pFunc).collect()
         # default sort of tuples is by first item, which happens to be what we want
+        if not filteredRecs:
+            raise KeyError("Key slice(s) not found: %s" % str(sliceOrSlices))
         return sorted(filteredRecs)
 
     def __getitem__(self, item):

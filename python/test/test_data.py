@@ -16,7 +16,8 @@ class TestImagesGetters(PySparkTestCase):
         self.images = Data(rdd, dtype='int16')
 
     def test_getMissing(self):
-        assert_is_none(self.images.get(-1))
+        # nonexistent key should throw a KeyError
+        assert_raises(KeyError, self.images.get, -1)
 
     def test_get(self):
         assert_true(array_equal(self.ary2, self.images.get(1)))
