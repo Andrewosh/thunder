@@ -1,8 +1,9 @@
 """Classes relating to Blocks, which represent subdivided Images data.
 """
 import cStringIO as StringIO
+
 import itertools
-from numpy import zeros, arange
+from numpy import zeros, arange, corrcoef
 import struct
 from thunder.rdds.data import Data
 from thunder.rdds.keys import Dimensions
@@ -258,6 +259,55 @@ class PaddedBlocks(SimpleBlocks):
     @property
     def _constructor(self):
         return PaddedBlocks
+
+    def localCorr(self, neighborhood):
+        """
+
+        Parameters
+        ----------
+        neighborhood : integer
+            Size of neighborhood, describes extent in either direction, so
+            total neighborhood will be 2n + 1.
+
+        Returns
+        -------
+        ???
+        """
+
+        def getCoords(blockKey):
+            """
+            Gets the list of coordinates with complete neighborhoods contained in a block, taking into consideration
+            the absolute position of the block within the surrounding image. If a block is positioned at the image
+            boundary, then the local correlation for points with incomplete neighborhoods should be computed.
+            """
+            fixedSlices = []
+            for i in xrange(len(blockKey.origShape[1:])):
+                dimSlice = blockKey.imgSlices[i + 1]
+                fixedSlices.append(())
+
+
+        def blockCorrCoef(blockKey, blockValue):
+            """
+            Computes the local correlations for every point in a block.
+            """
+            timePoints = blockKey.origShape[0]
+            timeSlice = slice(0, timePoints - 1, 1)
+            corrCoeffs = []
+            for coord in getCoords(blockKey):
+
+                # Extract the slice representing the whole neighborhood and compute its mean
+                neighborhoodSlices = [timeSlice]
+                spatialSlices = map(lambda x: slice(x - neighborhood, x + neighborhood, 1), coord)
+                neighborhoodSlices.append(spatialSlices)
+                neighborhoodMean = blockValue[neighborhoodSlices].reshape(timePoints, -1).mean(axis=1)
+
+                # Compute the correlation coefficient between that mean and the time series at the given coord
+                coeff = corrcoef(neighborhoodMean, blockValue[timeSlice, coord])[0, 1]
+                corrCoeffs.append((coord, coeff))
+
+            return corrCoeffs
+
+        return self.rdd.flatMap(lambda k, v: blockCorrCoef(k, v))
 
 
 class BlockingKey(object):

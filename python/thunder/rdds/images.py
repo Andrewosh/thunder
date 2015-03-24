@@ -365,6 +365,21 @@ class Images(Data):
         return self._constructor(
             self.rdd.mapValues(lambda v: filter_(v))).__finalize__(self)
 
+    def localCorr(self, neighborhood, blockSizeSpec="150M"):
+        """
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
+        # The optimal padding is the neighborhood size
+        blocks = self.toBlocks(size=blockSizeSpec, padding=neighborhood)
+        return blocks.localCorr(neighborhood)
+
+
     def crop(self, minbound, maxbound):
         """
         Crop a spatial region from 2D or 3D data.
