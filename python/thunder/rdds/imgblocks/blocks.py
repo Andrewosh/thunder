@@ -280,11 +280,18 @@ class PaddedBlocks(SimpleBlocks):
             the absolute position of the block within the surrounding image. If a block is positioned at the image
             boundary, then the local correlation for points with incomplete neighborhoods should be computed.
             """
-            fixedSlices = []
-            for i in xrange(len(blockKey.origShape[1:])):
-                dimSlice = blockKey.imgSlices[i + 1]
-                fixedSlices.append(())
+            from itertools import product
 
+            # Determine the bounds in each dimension
+            bounds = []
+            for slice, i in enumerate(blockKey.imgSlices):
+                lower = 0 if slice.start == 0 else slice.start + neighborhood
+                upper = slice.end if slice.end == blockKey.origShape[i] - 1 else slice.end - neighborhood
+                bounds.append((lower, upper))
+
+            # Generate an iterator for all coordinates within the above bounds
+            coordList = [xrange(lower, upper) for lower, upper in bounds]
+            return product(*coordList)
 
         def blockCorrCoef(blockKey, blockValue):
             """
