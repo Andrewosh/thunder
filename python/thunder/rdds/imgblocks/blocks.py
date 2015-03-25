@@ -302,6 +302,8 @@ class PaddedBlocks(SimpleBlocks):
             corrCoeffs = []
             for coord in getCoords(blockKey):
 
+                print coord
+
                 # Extract the slice representing the whole neighborhood and compute its mean
                 neighborhoodSlices = [timeSlice]
                 spatialSlices = map(lambda x: slice(x - neighborhood, x + neighborhood, 1), coord)
