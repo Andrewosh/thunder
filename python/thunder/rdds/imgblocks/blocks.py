@@ -3,7 +3,7 @@
 import cStringIO as StringIO
 
 import itertools
-from numpy import zeros, arange, corrcoef
+from numpy import zeros, arange, corrcoef, isnan
 import struct
 from thunder.rdds.data import Data
 from thunder.rdds.keys import Dimensions
@@ -311,11 +311,11 @@ class PaddedBlocks(SimpleBlocks):
                 # Compute the correlation coefficient between that mean and the time series at the given coord
                 pixel = blockValue[timeSlice + list(coord)]
                 coeff = corrcoef(neighborhoodMean, pixel)[0, 1]
-                corrCoeffs.append((coord, coeff))
+                corrCoeffs.append((coord, coeff if not isnan(coeff) else 0))
 
             return corrCoeffs
 
-        return self.rdd.flatMap(lambda (k, v): blockCorrCoef(k, v))
+        return self.rdd.flatMap(lambda (k, v): blockCorrCoef(k, v)).sortByKey()
 
 
 class BlockingKey(object):
