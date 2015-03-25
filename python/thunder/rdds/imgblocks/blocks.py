@@ -284,13 +284,14 @@ class PaddedBlocks(SimpleBlocks):
 
             # Determine the bounds in each dimension
             bounds = []
-            for slice, i in enumerate(blockKey.imgSlices):
+            for i, slice in enumerate(blockKey.imgSlices[1:]):
                 lower = 0 if slice.start == 0 else slice.start + neighborhood
-                upper = slice.end if slice.end == blockKey.origShape[i] - 1 else slice.end - neighborhood
+                upper = slice.stop if slice.stop == blockKey.origShape[i+1] else slice.stop - neighborhood
                 bounds.append((lower, upper))
 
             # Generate an iterator for all coordinates within the above bounds
             coordList = [xrange(lower, upper) for lower, upper in bounds]
+            print coordList
             return product(*coordList)
 
         def blockCorrCoef(blockKey, blockValue):
@@ -298,25 +299,23 @@ class PaddedBlocks(SimpleBlocks):
             Computes the local correlations for every point in a block.
             """
             timePoints = blockKey.origShape[0]
-            timeSlice = slice(0, timePoints - 1, 1)
+            timeSlice = [slice(0, timePoints, 1)]
             corrCoeffs = []
             for coord in getCoords(blockKey):
 
-                print coord
-
                 # Extract the slice representing the whole neighborhood and compute its mean
-                neighborhoodSlices = [timeSlice]
-                spatialSlices = map(lambda x: slice(x - neighborhood, x + neighborhood, 1), coord)
-                neighborhoodSlices.append(spatialSlices)
-                neighborhoodMean = blockValue[neighborhoodSlices].reshape(timePoints, -1).mean(axis=1)
+                spatialSlices = map(lambda x: slice(max(0, x - neighborhood), x + neighborhood, 1), coord)
+                slicedBlock = blockValue[timeSlice + spatialSlices]
+                neighborhoodMean = slicedBlock.reshape(timePoints, -1).mean(axis=1)
 
                 # Compute the correlation coefficient between that mean and the time series at the given coord
-                coeff = corrcoef(neighborhoodMean, blockValue[timeSlice, coord])[0, 1]
+                pixel = blockValue[timeSlice + list(coord)]
+                coeff = corrcoef(neighborhoodMean, pixel)[0, 1]
                 corrCoeffs.append((coord, coeff))
 
             return corrCoeffs
 
-        return self.rdd.flatMap(lambda k, v: blockCorrCoef(k, v))
+        return self.rdd.flatMap(lambda (k, v): blockCorrCoef(k, v))
 
 
 class BlockingKey(object):
