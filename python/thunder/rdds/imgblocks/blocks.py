@@ -281,17 +281,7 @@ class PaddedBlocks(SimpleBlocks):
             boundary, then the local correlation for points with incomplete neighborhoods should be computed.
             """
             from itertools import product
-
-            # Determine the bounds in each dimension
-            bounds = []
-            for i, slice in enumerate(blockKey.imgSlices[1:]):
-                lower = 0 if slice.start == 0 else slice.start + neighborhood
-                upper = slice.stop if slice.stop == blockKey.origShape[i+1] else slice.stop - neighborhood
-                bounds.append((lower, upper))
-
-            # Generate an iterator for all coordinates within the above bounds
-            coordList = [xrange(lower, upper) for lower, upper in bounds]
-            print coordList
+            coordList = [xrange(s.start, s.stop) for s in blockKey.valSlices[1:]]
             return product(*coordList)
 
         def blockCorrCoef(blockKey, blockValue):
@@ -306,10 +296,10 @@ class PaddedBlocks(SimpleBlocks):
                 # Extract the slice representing the whole neighborhood and compute its mean
                 spatialSlices = map(lambda x: slice(max(0, x - neighborhood), x + neighborhood, 1), coord)
                 slicedBlock = blockValue[timeSlice + spatialSlices]
+                pixel = blockValue[timeSlice + list(coord)]
                 neighborhoodMean = slicedBlock.reshape(timePoints, -1).mean(axis=1)
 
                 # Compute the correlation coefficient between that mean and the time series at the given coord
-                pixel = blockValue[timeSlice + list(coord)]
                 coeff = corrcoef(neighborhoodMean, pixel)[0, 1]
                 corrCoeffs.append((coord, coeff if not isnan(coeff) else 0))
 
