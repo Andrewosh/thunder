@@ -303,7 +303,7 @@ class PaddedBlocks(SimpleBlocks):
                 coeff = corrcoef(neighborhoodMean, pixel)[0, 1]
 
                 # Translate the block coordinates to absolute coordinates
-                absCoord = enumerate(coord).map(lambda (i, dim): dim + blockKey.imgSlices[i+1].start)
+                absCoord = map(lambda (i, dim): dim + blockKey.imgSlices[i+1].start, enumerate(coord))
                 corrCoeffs.append((absCoord, coeff if not isnan(coeff) else 0))
 
             return corrCoeffs
