@@ -291,8 +291,8 @@ class PaddedBlocks(SimpleBlocks):
             timePoints = blockKey.origShape[0]
             timeSlice = [slice(0, timePoints, 1)]
             corrCoeffs = []
-            for coord in getCoords(blockKey):
 
+            for coord in getCoords(blockKey):
                 # Extract the slice representing the whole neighborhood and compute its mean
                 spatialSlices = map(lambda x: slice(max(0, x - neighborhood), x + neighborhood, 1), coord)
                 slicedBlock = blockValue[timeSlice + spatialSlices]
@@ -301,7 +301,10 @@ class PaddedBlocks(SimpleBlocks):
 
                 # Compute the correlation coefficient between that mean and the time series at the given coord
                 coeff = corrcoef(neighborhoodMean, pixel)[0, 1]
-                corrCoeffs.append((coord, coeff if not isnan(coeff) else 0))
+
+                # Translate the block coordinates to absolute coordinates
+                absCoord = enumerate(coord).map(lambda (i, dim): dim + blockKey.imgSlices[i+1].start)
+                corrCoeffs.append((absCoord, coeff if not isnan(coeff) else 0))
 
             return corrCoeffs
 
